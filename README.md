@@ -166,9 +166,81 @@ But guontt not; do spost I vour have well...
 
 ### Observations
 
-- ✅ Correct Shakespeare format: character names, line breaks, punctuation
-- ✅ Grammatical sentence structure with subjects and verbs
-- ✅ Mixed multiple characters (ROMEO, DUKE OF YORK, POMPEY...)
+-  Correct Shakespeare format: character names, line breaks, punctuation
+-  Grammatical sentence structure with subjects and verbs
+-  Mixed multiple characters (ROMEO, DUKE OF YORK, POMPEY...)
 - ❌ Many misspelled words ("humbract", "encleming") — expected for character-level model
 - ⚠️ Slight overfitting: train loss `1.66` < val loss `1.82` (gap ~0.16)
+
+
+## Full text generation
+
+FlY BOLINGHARD:
+Nay, humbract; it contes too
+must encleming and the second; and say life;
+In enter all I are and those it;
+Give out of your I'll tom them nither,
+One these is news it cy rege;
+What Naying well and Burryres an fear?
+
+OXITVOHN MONFIUS:
+O is my mily.
+
+LEONTES:
+Geve worman:
+But guontt not; do spost I vour have well;
+Not and go the rivisher's become,
+And alight, upon Crame be with the On man.
+
+Roman:
+What I would and Capolicioual;
+And wife must he awour,
+Butcousins the solle with he twomment. Gefore hild you sure
+That state my not.
+
+DUKE OF YORK:
+My surnt not I have too gentle men
+Comily comport's that him; I cannot this your
+house. But as bathol! and now your and;
+Which-suppy will to coursein to shall her spersend,
+That you holk all gentled to plartes no mune in en slaicsion,
+But
+Thmal, but terruly friend
+Ristom with the rigess and wilt tentry:
+I dry that kisspy guase, we mine! crut while with up,
+I som fries that neish he pray, if,
+Thom the hre seinged fleby devir begom as goody.
+Go as thee, thou would may night.
+
+ROMEO:
+It gantle behone, thy lasbeet, him our sitive on;
+The now to be, all gokss noblambsties. joy to you would do to the woold,
+Northy will your sould in him, Andrend.
+
+LE:
+My, wense what I will betters, that them end all the sposse is seeess,
+I Tostry experirts livants you great?
+I shalk I suort set, for this glied.
+The some it, men vanty lieht. Murst; or us Volner, still;
+I wear his crumpurats there suiless Edwift a thoughanted to your ground.
+Where-be in his is
+Hard tode toble anoced me the ords,
+Wonestiful be sweet flough. were you, where 'twon enmer, 'word.
+
+POMPEY:
+Whus bot azy houth this sele yourders?
+
+POLFORD NORK:
+Yet O, sapewer, conted, so, good agion mise thy done
+on his iffather Befole wefpate,
+And hrow I teass in I knounged my spite
+but age so sucalf me with non your
+and:
+As one thums of the slive righanneds:
+Has then that with, and wein that we sterp'd hurse comison toOH!
+
+SICHAM:
+What'm, I have it:
+Twere I pear news,
+Twas wha
 
