@@ -6,7 +6,9 @@ Loss dropped from **4.41 → 1.66** ( 5000 times trained with other parameter in
 
 # Building nanoGPT — The Big Picture
 
-We have this architecture to training at least normal GPT 
+We have this architecture to training a GPT-2
+
+```
 Input (Tokens) 
   │
   ▼
@@ -32,7 +34,7 @@ Input (Tokens)
   │
   ▼
 [ Linear Head ] → [ Softmax ] → Output (Xác suất từ kế tiếp)
-
+```
 ## What is it doing?
 
 **Goal**: Given a sequence of characters, predict the next character → generate Shakespeare-like text.
