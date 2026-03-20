@@ -1,8 +1,37 @@
 # GPT Token Prediction
 
-A character-level GPT language model built from scratch using PyTorch, following Andrej's tutorial, heavily inspired by the architecture that powers models like GPT-2 and GPT-3.
+A character-level GPT language model built from scratch using PyTorch, following Andrej's tutorial, heavily inspired by the architecture that powers models like GPT-2 and GPT-3. 
+
+Loss dropped from **4.41 → 1.66** ( 5000 times trained with other parameter in code) — model learned average of 62%.
 
 # Building nanoGPT — The Big Picture
+
+We have this architecture to training at least normal GPT 
+Input (Tokens) 
+  │
+  ▼
+[ Token + Positional Embedding ]
+  │
+  ▼
+┌──────────────────────────────┐
+│  LayerNorm                   │
+│      ↓                       │
+│  Multi-Head Attention        │  (Lặp lại N lần)
+│      ↓                       │
+│  Residual Connection (+x)    │
+│      ↓                       │
+│  LayerNorm                   │
+│      ↓                       │
+│  FeedForward (MLP)           │
+│      ↓                       │
+│  Residual Connection (+x)    │
+└──────────────────────────────┘
+  │
+  ▼
+[ Final LayerNorm ]
+  │
+  ▼
+[ Linear Head ] → [ Softmax ] → Output (Xác suất từ kế tiếp)
 
 ## What is it doing?
 
@@ -99,15 +128,45 @@ Characters → Token Embed + Position Embed → 4 Blocks → LayerNorm → Linea
 
 ---
 
-## Key Building Blocks Summary
 
-| Block | What it does | Why needed |
-|-------|-------------|-----------|
-| **Embedding** | Char → vector | Computers need numbers, not letters |
-| **Position Embed** | Encode where in sequence | Attention has no built-in sense of order |
-| **Self-Attention** | Tokens communicate | "Who should I pay attention to?" |
-| **FeedForward** | Tokens think alone | Process the gathered information |
-| **Residual (`x + f(x)`)** | Skip connections | Prevents signal loss in deep networks |
-| **LayerNorm** | Normalize values | Keeps training stable |
-| **Softmax** | Scores → probabilities | Need proper distribution to sample from |
-| **Causal Mask** | Block future tokens | Can't cheat during training |
+## Result
+
+### Loss Progression (~7 min training on Colab, 0.21M parameters)
+
+| Phase | Steps | Train Loss | Val Loss |
+|-------|-------|-----------|---------|
+| Start | 0 | 4.41 | 4.40 |
+| Early | 500 | 2.30 | 2.31 |
+| Mid | 2000 | 1.89 | 1.99 |
+| Late | 4000 | 1.72 | 1.86 |
+| **Final** | **4999** | **1.66** | **1.82** |
+
+
+
+### Generated Output Sample
+
+```
+FlY BOLINGHARD:
+Nay, humbract; it contes too
+must encleming and the second; and say life;
+In enter all I are and those it;
+Give out of your I'll tom them nither,
+One these is news it cy rege;
+What Naying well and Burryres an fear?
+
+OXITVOHN MONFIUS:
+O is my mily.
+
+LEONTES:
+Geve worman:
+But guontt not; do spost I vour have well...
+```
+
+### Observations
+
+- ✅ Correct Shakespeare format: character names, line breaks, punctuation
+- ✅ Grammatical sentence structure with subjects and verbs
+- ✅ Mixed multiple characters (ROMEO, DUKE OF YORK, POMPEY...)
+- ❌ Many misspelled words ("humbract", "encleming") — expected for character-level model
+- ⚠️ Slight overfitting: train loss `1.66` < val loss `1.82` (gap ~0.16)
+
