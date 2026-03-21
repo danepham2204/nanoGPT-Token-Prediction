@@ -264,6 +264,7 @@ x = torch.randn(32, 100) # batch size 32 of 100-dimensional vectors
 x = module(x)
 x.shape
 
+import time
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
@@ -456,6 +457,13 @@ print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters')
 
 # create a PyTorch optimizer
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+
+# ── Benchmark: bắt đầu đo ───────────────────────────────────────
+if torch.cuda.is_available():
+    torch.cuda.synchronize()
+    torch.cuda.reset_peak_memory_stats()
+start = time.time()
+# ─────────────────────────────────────────────────────────────────
 
 for iter in range(max_iters):
 

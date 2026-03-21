@@ -1,8 +1,10 @@
 # GPT Token Prediction
 
-A character-level GPT language model built from scratch using PyTorch, following Andrej's tutorial, heavily inspired by the architecture that powers models like GPT-2 and GPT-3. 
+A character-level GPT language model built from scratch using PyTorch, following Andrej Karpathy's tutorial, heavily inspired by the architecture that powers models like GPT-2 and GPT-3.
 
-Loss dropped from **4.41 → 1.66** ( 5000 times trained with other parameter in code) — model learned average of 62%.
+An optimized version (v2) was also implemented applying: **Fused QKV projection**, **Flash Attention** (`F.scaled_dot_product_attention`), **GELU** activation, **Gradient Clipping**, **Mixed Precision** (float16), and a **Cosine LR Scheduler**.
+
+Baseline loss dropped from **4.41 → 1.83** val loss over 5000 steps — see the [experiment section](#experiment-baseline-vs-optimized-5000-steps-t4-gpu) for a full comparison and analysis of why the optimized version requires longer training to show its benefits.
 
 # Building nanoGPT — The Big Picture
 
@@ -131,116 +133,89 @@ Characters → Token Embed + Position Embed → 4 Blocks → LayerNorm → Linea
 ---
 
 
-## Result
+## Experiment: Baseline vs Optimized (5000 steps, T4 GPU)
 
-### Loss Progression (~7 min training on Colab, 0.21M parameters)
+### What changed in the Optimized version?
 
-| Phase | Steps | Train Loss | Val Loss |
-|-------|-------|-----------|---------|
-| Start | 0 | 4.41 | 4.40 |
-| Early | 500 | 2.30 | 2.31 |
-| Mid | 2000 | 1.89 | 1.99 |
-| Late | 4000 | 1.72 | 1.86 |
-| **Final** | **4999** | **1.66** | **1.82** |
+| Change | Baseline (v1) | Optimized (v2) |
+|---|---|---|
+| Attention | Manual Q/K/V | Fused QKV + Flash Attention |
+| Activation | ReLU | GELU |
+| Learning Rate | Fixed `1e-3` | Cosine decay `1e-3 → 1e-4` |
+| Dropout | `0.0` | `0.1` |
+| Gradient Clipping | ❌ | `max_norm=1.0` |
+| Mixed Precision | ❌ |  float16 autocast |
 
+---
 
+### Loss Comparison at 5000 steps
 
-### Generated Output Sample
+| Step | v1 Train | v1 Val | v2 Train | v2 Val |
+|------|----------|--------|----------|--------|
+| 0 | 4.41 | 4.40 | 4.40 | 4.40 |
+| 1000 | 2.10 | 2.13 | 2.10 | 2.12 |
+| 2500 | 1.81 | 1.94 | 1.85 | 1.95 |
+| 4999 | **1.66** | **1.83** | **1.74** | **1.87** |
+
+**Winner: v1 (Baseline)** — lower val loss by ~0.04 at the same number of steps.
+
+---
+
+### Why did v2 (Optimized) lose despite having more techniques?
+
+#### Reason 1: Cosine LR Scheduler decayed too fast for only 5000 steps
+
+The scheduler was designed for long training runs (50k+ steps). With only 5000 steps, LR had already dropped to `5.5e-4` by step 2500 — half of its starting value — causing the model to slow down learning too early.
 
 ```
-FlY BOLINGHARD:
-Nay, humbract; it contes too
-must encleming and the second; and say life;
-In enter all I are and those it;
-Give out of your I'll tom them nither,
-One these is news it cy rege;
-What Naying well and Burryres an fear?
-
-OXITVOHN MONFIUS:
-O is my mily.
-
-LEONTES:
-Geve worman:
-But guontt not; do spost I vour have well...
+step    0: lr = 1.00e-03  ← full speed
+step 2500: lr = 5.50e-04  ← already half, model slowing down
+step 4000: lr = 1.86e-04  ← nearly frozen
+step 4999: lr = 1.00e-04  ← effectively stopped learning
 ```
 
-### Observations
+> Fix: Use `T_max = max_iters` and more training steps (10k+), or simply use a fixed LR for short runs.
 
--  Correct Shakespeare format: character names, line breaks, punctuation
--  Grammatical sentence structure with subjects and verbs
--  Mixed multiple characters (ROMEO, DUKE OF YORK, POMPEY...)
-- ❌ Many misspelled words ("humbract", "encleming") — expected for character-level model
-- ⚠️ Slight overfitting: train loss `1.66` < val loss `1.82` (gap ~0.16)
+#### Reason 2: `dropout=0.1` hurts with only 5000 steps
 
+Dropout randomly silences 10% of neurons during training, adding noise that requires more steps to overcome. With a small dataset (tiny Shakespeare, ~1M chars) and only 5000 steps, dropout slows convergence without having enough time to provide regularization benefits.
 
-## Full text generation
+> Fix: Keep `dropout=0.0` for short training runs, or use `0.05` at most.
 
-FlY BOLINGHARD:
-Nay, humbract; it contes too
-must encleming and the second; and say life;
-In enter all I are and those it;
-Give out of your I'll tom them nither,
-One these is news it cy rege;
-What Naying well and Burryres an fear?
+#### What v2 actually improved (not visible in 5000-step loss)
 
-OXITVOHN MONFIUS:
-O is my mily.
+- **Speed**: Flash Attention reduces memory from O(T²) to O(T), faster on GPU
+- **Stability**: Gradient clipping prevents loss spikes when scaling up
+- **Scalability**: These techniques shine at larger model sizes and longer training
 
-LEONTES:
-Geve worman:
-But guontt not; do spost I vour have well;
-Not and go the rivisher's become,
-And alight, upon Crame be with the On man.
+---
 
-Roman:
-What I would and Capolicioual;
-And wife must he awour,
-Butcousins the solle with he twomment. Gefore hild you sure
-That state my not.
+### Generated Text Comparison
 
-DUKE OF YORK:
-My surnt not I have too gentle men
-Comily comport's that him; I cannot this your
-house. But as bathol! and now your and;
-Which-suppy will to coursein to shall her spersend,
-That you holk all gentled to plartes no mune in en slaicsion,
-But
-Thmal, but terruly friend
-Ristom with the rigess and wilt tentry:
-I dry that kisspy guase, we mine! crut while with up,
-I som fries that neish he pray, if,
-Thom the hre seinged fleby devir begom as goody.
-Go as thee, thou would may night.
+**v1 output (val loss 1.83):**
+```
+KING RICHARD II:
+Shal lifest made to bub, to take Our my dagatants:
+Whith foul his vetward that a endrer, my fears' to zorm heavens...
 
-ROMEO:
-It gantle behone, thy lasbeet, him our sitive on;
-The now to be, all gokss noblambsties. joy to you would do to the woold,
-Northy will your sould in him, Andrend.
+WARWICK:
+Welll now, and thus quechiry: there's speak you love.
+```
 
-LE:
-My, wense what I will betters, that them end all the sposse is seeess,
-I Tostry experirts livants you great?
-I shalk I suort set, for this glied.
-The some it, men vanty lieht. Murst; or us Volner, still;
-I wear his crumpurats there suiless Edwift a thoughanted to your ground.
-Where-be in his is
-Hard tode toble anoced me the ords,
-Wonestiful be sweet flough. were you, where 'twon enmer, 'word.
+**v2 output (val loss 1.87):**
+```
+LENA:
+Where creess in himsess folet I Pame your lience;
+This I prase and your spetcileggerving stignt is near...
 
-POMPEY:
-Whus bot azy houth this sele yourders?
+JULI:
+And hus harselford strain, ye.
+```
 
-POLFORD NORK:
-Yet O, sapewer, conted, so, good agion mise thy done
-on his iffather Befole wefpate,
-And hrow I teass in I knounged my spite
-but age so sucalf me with non your
-and:
-As one thums of the slive righanneds:
-Has then that with, and wein that we sterp'd hurse comison toOH!
+Both outputs show correct Shakespeare formatting (character names, line breaks, punctuation) with misspelled words expected from a char-level model.
 
-SICHAM:
-What'm, I have it:
-Twere I pear news,
-Twas wha
+---
 
+### Conclusion
+
+> The optimizations in v2 (Fused QKV, Flash Attention, GELU, Mixed Precision) are **infrastructure improvements** — they make training faster and more memory efficient without changing the final loss at equal steps. However, the **hyperparameter changes** (Cosine LR + dropout=0.1) introduced in the same version hurt convergence within the 5000-step budget. To see the real benefit of v2, either train for 10k+ steps or revert just the LR and dropout settings.
